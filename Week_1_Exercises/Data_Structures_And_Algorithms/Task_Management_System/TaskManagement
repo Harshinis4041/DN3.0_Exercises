@@ -1,0 +1,74 @@
+
+1. Understanding Linked Lists:
+******************************
+
+**Singly Linked List:
+
+>>Each node has a single reference pointing to the next node.
+
+>>Operations like insertion and deletion are efficient (O(1)) at the beginning.
+
+>>Traversal and search operations are linear (O(n)) as it involves going through the list sequentially.
+
+**Doubly Linked List:
+
+>>Each node has two references: one pointing to the next node and another to the previous node.
+
+>>Allows bidirectional traversal.
+
+>>Insertion and deletion are still efficient (O(1)) at both ends.
+
+>>Requires extra memory for the additional reference.
+
+2. Setup:
+*********
+
+**Class Task:
+
+>>Attributes:
+
+>>taskId: Unique identifier for the task.
+
+>>taskName: Name of the task.
+
+>>status: Current status of the task (e.g., Pending, Completed).
+
+3. Implementation:
+*****************
+
+**Singly Linked List:
+
+>>TaskNode Class: Represents a node in the linked list, containing a Task object and a reference to the next node.
+
+**TaskLinkedList Class: Manages the linked list with methods to:
+
+>>Add: Insert a task at the end of the list.
+
+>>Search: Find a task by taskId.
+
+>>Traverse: List all tasks from the head to the end of the list.
+
+>>Delete: Remove a task by taskId, adjusting links as needed.
+
+4. Analysis:
+************
+
+**Time Complexity:
+
+>>Add: O(n) in the worst case (requires traversing to the end).
+
+>>Search: O(n) as it involves checking each node.
+
+>>Traverse: O(n) since it involves visiting each node once.
+
+>>Delete: O(n) in the worst case (requires searching for the node to delete).
+
+**Advantages of Linked Lists:
+
+>>Dynamic Size: Easily grows and shrinks as needed without pre-allocating space.
+
+>>Efficient Insertions/Deletions: More efficient than arrays when it comes to adding or removing elements, especially if done frequently.
+
+**When to Use Linked Lists:
+
+>>Ideal when the number of elements changes frequently and you need efficient insertions and deletions.
