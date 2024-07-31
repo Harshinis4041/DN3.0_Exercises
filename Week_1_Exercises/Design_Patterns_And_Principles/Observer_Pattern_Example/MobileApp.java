@@ -1,4 +1,4 @@
-package ObserverPatternExample;
+package Observer_Pattern_Example;
 
 public class MobileApp implements Observer {
     private StockMarket stockMarket;

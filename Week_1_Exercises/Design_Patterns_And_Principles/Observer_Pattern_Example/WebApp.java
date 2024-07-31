@@ -1,4 +1,4 @@
-package ObserverPatternExample;
+package Observer_Pattern_Example;
 
 // Implementing the Observer interface
 public class WebApp implements Observer {
