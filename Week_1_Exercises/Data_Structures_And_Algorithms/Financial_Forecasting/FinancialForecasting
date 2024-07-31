@@ -1,0 +1,40 @@
+
+1. Understand Recursive Algorithms
+**********************************
+
+**Concept of Recursion:
+
+>>Recursion is a technique where a function calls itself to solve smaller instances of the same problem. It simplifies complex problems by breaking them down into simpler, similar tasks. For forecasting, recursion can repeatedly apply a growth formula to calculate future values, simplifying the computation process.
+
+2. Setup
+********
+
+**Method Creation:
+
+>>Create a method called calculateFutureValue that calculates future values using recursion. This method should take three parameters: initialValue (the starting amount), growthRate (the annual growth rate), and years (the number of years). The method should recursively compute the future value based on these inputs.
+
+3. Implementation
+*****************
+
+**Recursive Algorithm:
+
+>>Implement the calculateFutureValue method with the following logic:
+
+>>Base Case: If years is 0, return the initialValue.
+
+>>Recursive Case: Multiply the current initialValue by (1 + growthRate) and recursively call calculateFutureValue with years decremented by 1.
+
+4. Analysis
+***********
+
+**Time Complexity:
+
+>>The time complexity of the recursive method is O(n), where n is the number of years. Each recursive call handles one year, leading to a linear number of calls relative to the number of years.
+
+**Optimization:
+
+>>To optimize and avoid excessive computation:
+
+>>Memoization: Store results of previous calculations to prevent redundant work.
+
+>>Iterative Approach: Consider using an iterative approach for large datasets to avoid the overhead of recursive calls.
