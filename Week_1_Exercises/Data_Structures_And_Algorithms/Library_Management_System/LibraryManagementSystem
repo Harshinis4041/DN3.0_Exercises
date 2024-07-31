@@ -1,0 +1,63 @@
+
+1. Understand Search Algorithms
+*******************************
+
+**Linear Search:
+
+>>Description: Checks each item sequentially until the target is found or the list ends.
+
+>>Time Complexity: O(n). Suitable for small or unsorted lists.
+
+**Binary Search:
+
+>>Description: Divides the sorted list into halves repeatedly until the target is found or the search interval is empty.
+
+>>Time Complexity: O(log n). Efficient for large, sorted lists.
+
+2. Setup
+********
+
+>>Class Book:
+
+>>Attributes:
+
+>>bookId: Unique identifier.
+
+>>title: Book title.
+
+>>author: Book author.
+
+3. Implementation
+*****************
+
+**Linear Search Implementation:
+
+>>Class: BookSearch
+
+>>Method: linearSearchByTitle
+
+>>Description: Searches through an unsorted list of books by title.
+
+>>Binary Search Implementation:
+
+
+>>Class: BookSearch
+
+>>Method: binarySearchByTitle
+
+>>Description: Searches through a sorted array of books by title.
+
+4. Analysis
+***********
+
+**Time Complexity Comparison:
+
+>>Linear Search: O(n). Simple but slower for large lists.
+
+>>Binary Search: O(log n). Faster but requires sorted data.
+
+**When to Use:
+
+>>Linear Search: Use for small or unsorted lists.
+
+>>Binary Search: Use for large, sorted lists.
