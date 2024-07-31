@@ -1,0 +1,64 @@
+
+1. Understanding Array Representation:
+**************************************
+
+>>Array Representation: Arrays are stored in contiguous memory, which allows for quick access using indices.
+
+**Advantages:
+
+>>Fast access time (O(1)).
+
+>>Simple and predictable memory usage.
+
+2. Setup:
+*********
+
+**Class Employee:
+
+>>employeeId: Unique ID.
+
+>>name: Employee’s name.
+
+>>position: Job title.
+
+>>salary: Employee’s salary.
+
+3. Implementation:
+******************
+
+>>Use an Array: Store Employee records in an array.
+
+**Methods:
+
+>>Add: Adds an employee to the array; resizes if needed.
+
+>>Search: Finds an employee by employeeId.
+
+>>Traverse: Lists all employees.
+
+>>Delete: Removes an employee by employeeId and shifts remaining elements.
+
+4. Analysis:
+************
+
+**Time Complexity:
+
+>>Add: O(1) if no resize; O(n) if resizing.
+
+>>Search: O(n) in the worst case.
+
+>>Traverse: O(n) as it involves iterating through the array.
+
+>>Delete: O(n) due to shifting elements.
+
+**Limitations:
+
+>>Fixed size: Array size is immutable without resizing.
+
+>>Resizing is costly and inefficient for large data sets.
+
+>>Inefficient insertions and deletions due to element shifting.
+
+**When to Use:
+
+>>Suitable for fixed-size collections where quick access is needed and resizing overhead is manageable.
