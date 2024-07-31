@@ -1,0 +1,34 @@
+
+1. Understanding Sorting Algorithms
+***********************************
+
+>>Bubble Sort: Simple comparison-based sorting. O(n^2) time complexity.
+
+>>Insertion Sort: Builds sorted array one item at a time. O(n^2) time complexity.
+
+>>Quick Sort: Efficient divide-and-conquer algorithm. O(n log n) average time complexity.
+
+>>Merge Sort: Efficient divide-and-conquer algorithm requiring extra memory. O(n log n) time complexity.
+
+2. Setup
+********
+
+>> Order Class: Represents customer orders with attributes like orderId, customerName, and totalPrice.
+
+3. Implementation
+*****************
+
+>>Bubble Sort: Sequentially compares and swaps adjacent elements to sort the list.
+
+>>Quick Sort: Uses a pivot to partition the array and recursively sorts the partitions.
+
+4. Analysis
+***********
+
+**Time Complexity:
+
+>>Bubble Sort: O(n^2)
+
+>>Quick Sort: O(n log n) average, O(n^2) worst
+
+>>Suitability: Quick Sort is preferred for its efficiency with large datasets and in-place sorting.
