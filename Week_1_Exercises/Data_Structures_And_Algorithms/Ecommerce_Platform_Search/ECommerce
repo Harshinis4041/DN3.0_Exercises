@@ -1,0 +1,40 @@
+
+1. Understanding the Problem
+****************************
+
+**Big O Notation
+
+>>Definition: Big O Notation describes the upper limit of an algorithm's runtime, helping to gauge performance as input size increases.
+
+>>Purpose: It allows comparison of algorithms based on their efficiency.
+
+**Search Scenarios
+
+>>Best Case: The target is found immediately.
+
+>>Average Case: The target is found after several comparisons.
+
+>>Worst Case: The target is not found or requires the maximum number of comparisons.
+
+2. Setup
+********
+
+>>Class ProductItem: Represents products with attributes such as productId, productName, and category.
+
+3. Implementation
+*****************
+
+>>Linear Search: Scans each element sequentially until the target is found or the end is reached.
+
+>>Binary Search: Efficiently searches in a sorted array by repeatedly dividing the search interval in half.
+
+4. Analysis
+***********
+
+**Time Complexity:
+
+>>Linear Search: O(n) in the average and worst cases.
+
+>>Binary Search: O(log n) in the average and worst cases.
+
+>>Suitability: Binary Search is faster for large, sorted datasets. Linear Search is simpler for unsorted or small datasets.
