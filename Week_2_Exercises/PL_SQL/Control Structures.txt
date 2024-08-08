@@ -1,0 +1,55 @@
+Scenario -- 1:
+*************
+
+BEGIN
+    FOR rec IN (SELECT CustomerID, InterestRate FROM Loans WHERE LoanID IS NOT NULL) LOOP
+        -- Check if the customer is older than 60
+        DECLARE
+            v_age NUMBER;
+        BEGIN
+            SELECT FLOOR(MONTHS_BETWEEN(SYSDATE, DOB) / 12)
+            INTO v_age
+            FROM Customers
+            WHERE CustomerID = rec.CustomerID;
+
+            IF v_age > 60 THEN
+                -- Apply a 1% discount
+                UPDATE Loans
+                SET InterestRate = InterestRate - 1
+                WHERE LoanID = rec.LoanID;
+            END IF;
+        END;
+    END LOOP;
+    COMMIT;
+END;
+
+
+
+
+Scenario -- 2:
+*************
+
+BEGIN
+    FOR rec IN (SELECT CustomerID, Balance FROM Customers) LOOP
+        IF rec.Balance > 10000 THEN
+            -- Set IsVIP to TRUE
+            UPDATE Customers
+            SET IsVIP = TRUE
+            WHERE CustomerID = rec.CustomerID;
+        END IF;
+    END LOOP;
+    COMMIT;
+END;
+
+
+
+Scenario -- 3:
+*************
+
+BEGIN
+    FOR rec IN (SELECT CustomerID, LoanID, EndDate FROM Loans WHERE EndDate BETWEEN SYSDATE AND SYSDATE + 30) LOOP
+        DBMS_OUTPUT.PUT_LINE('Reminder: Loan ' || rec.LoanID || ' for Customer ' || rec.CustomerID || ' is due soon.');
+    END LOOP;
+END;
+
+

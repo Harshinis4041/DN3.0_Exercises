@@ -1,0 +1,157 @@
+Scenario 1:
+***********
+
+>> Package Specification
+
+CREATE OR REPLACE PACKAGE CustomerManagement AS
+    PROCEDURE AddCustomer(p_customer_id NUMBER, p_name VARCHAR2, p_dob DATE, p_balance NUMBER);
+    PROCEDURE UpdateCustomerDetails(p_customer_id NUMBER, p_name VARCHAR2, p_dob DATE);
+    FUNCTION GetCustomerBalance(p_customer_id NUMBER) RETURN NUMBER;
+END CustomerManagement;
+
+>> Package Body
+
+CREATE OR REPLACE PACKAGE BODY CustomerManagement AS
+
+    PROCEDURE AddCustomer(p_customer_id NUMBER, p_name VARCHAR2, p_dob DATE, p_balance NUMBER) IS
+    BEGIN
+        BEGIN
+            INSERT INTO Customers (CustomerID, Name, DOB, Balance, LastModified)
+            VALUES (p_customer_id, p_name, p_dob, p_balance, SYSDATE);
+            COMMIT;
+        EXCEPTION
+            WHEN DUP_VAL_ON_INDEX THEN
+                DBMS_OUTPUT.PUT_LINE('Customer with ID ' || p_customer_id || ' already exists.');
+        END;
+    END AddCustomer;
+
+    PROCEDURE UpdateCustomerDetails(p_customer_id NUMBER, p_name VARCHAR2, p_dob DATE) IS
+    BEGIN
+        UPDATE Customers
+        SET Name = p_name,
+            DOB = p_dob,
+            LastModified = SYSDATE
+        WHERE CustomerID = p_customer_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Customer with ID ' || p_customer_id || ' not found.');
+        ELSE
+            COMMIT;
+        END IF;
+    END UpdateCustomerDetails;
+
+    FUNCTION GetCustomerBalance(p_customer_id NUMBER) RETURN NUMBER IS
+        v_balance NUMBER;
+    BEGIN
+        SELECT Balance INTO v_balance FROM Customers WHERE CustomerID = p_customer_id;
+        RETURN v_balance;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END GetCustomerBalance;
+
+END CustomerManagement;
+
+
+
+
+Scenario 2:
+***********
+
+>> Package Specification
+
+CREATE OR REPLACE PACKAGE EmployeeManagement AS
+    PROCEDURE HireEmployee(p_employee_id NUMBER, p_name VARCHAR2, p_position VARCHAR2, p_salary NUMBER, p_department VARCHAR2);
+    PROCEDURE UpdateEmployeeDetails(p_employee_id NUMBER, p_position VARCHAR2, p_salary NUMBER);
+    FUNCTION CalculateAnnualSalary(p_employee_id NUMBER) RETURN NUMBER;
+END EmployeeManagement;
+
+
+
+>> Package Body
+
+CREATE OR REPLACE PACKAGE BODY EmployeeManagement AS
+
+    PROCEDURE HireEmployee(p_employee_id NUMBER, p_name VARCHAR2, p_position VARCHAR2, p_salary NUMBER, p_department VARCHAR2) IS
+    BEGIN
+        INSERT INTO Employees (EmployeeID, Name, Position, Salary, Department, HireDate)
+        VALUES (p_employee_id, p_name, p_position, p_salary, p_department, SYSDATE);
+        COMMIT;
+    END HireEmployee;
+
+    PROCEDURE UpdateEmployeeDetails(p_employee_id NUMBER, p_position VARCHAR2, p_salary NUMBER) IS
+    BEGIN
+        UPDATE Employees
+        SET Position = p_position,
+            Salary = p_salary,
+            HireDate = SYSDATE
+        WHERE EmployeeID = p_employee_id;
+
+        IF SQL%ROWCOUNT = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Employee with ID ' || p_employee_id || ' not found.');
+        ELSE
+            COMMIT;
+        END IF;
+    END UpdateEmployeeDetails;
+
+    FUNCTION CalculateAnnualSalary(p_employee_id NUMBER) RETURN NUMBER IS
+        v_salary NUMBER;
+    BEGIN
+        SELECT Salary INTO v_salary FROM Employees WHERE EmployeeID = p_employee_id;
+        RETURN v_salary * 12;  -- Assuming monthly salary
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END CalculateAnnualSalary;
+
+END EmployeeManagement;
+
+
+
+Scenario 3:
+***********
+
+>> Package Specification
+
+
+CREATE OR REPLACE PACKAGE AccountOperations AS
+    PROCEDURE OpenAccount(p_account_id NUMBER, p_customer_id NUMBER, p_account_type VARCHAR2, p_balance NUMBER);
+    PROCEDURE CloseAccount(p_account_id NUMBER);
+    FUNCTION GetTotalBalance(p_customer_id NUMBER) RETURN NUMBER;
+END AccountOperations;
+
+
+
+>> Package Body
+
+CREATE OR REPLACE PACKAGE BODY AccountOperations AS
+
+    PROCEDURE OpenAccount(p_account_id NUMBER, p_customer_id NUMBER, p_account_type VARCHAR2, p_balance NUMBER) IS
+    BEGIN
+        INSERT INTO Accounts (AccountID, CustomerID, AccountType, Balance, LastModified)
+        VALUES (p_account_id, p_customer_id, p_account_type, p_balance, SYSDATE);
+        COMMIT;
+    END OpenAccount;
+
+    PROCEDURE CloseAccount(p_account_id NUMBER) IS
+    BEGIN
+        DELETE FROM Accounts WHERE AccountID = p_account_id;
+        IF SQL%ROWCOUNT = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Account with ID ' || p_account_id || ' not found.');
+        ELSE
+            COMMIT;
+        END IF;
+    END CloseAccount;
+
+    FUNCTION GetTotalBalance(p_customer_id NUMBER) RETURN NUMBER IS
+        v_total_balance NUMBER;
+    BEGIN
+        SELECT SUM(Balance) INTO v_total_balance FROM Accounts WHERE CustomerID = p_customer_id;
+        RETURN v_total_balance;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RETURN NULL;
+    END GetTotalBalance;
+
+END AccountOperations;
+
