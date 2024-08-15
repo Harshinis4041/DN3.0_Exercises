@@ -1,0 +1,241 @@
+
+pom.xml:
+********
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>employeemanagementsystem</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>Employee Management System</name>
+    <description>Employee Management System using Spring Boot</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.h2</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+_____________________________________________________________________________
+
+
+application.properties:
+***********************
+
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+
+
+
+______________________________________________________________________________
+
+
+
+EmployeeManagementSystemApplication.java:
+*****************************************
+
+package com.example.employeemanagementsystem;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class EmployeeManagementSystemApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(EmployeeManagementSystemApplication.class, args);
+    }
+}
+
+
+
+______________________________________________________________________________
+
+
+
+
+Employee.java:
+**************
+
+package com.example.employeemanagementsystem.model;
+
+import lombok.Data;
+import javax.persistence.*;
+
+@Data
+@Entity
+public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String position;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
+}
+
+
+_______________________________________________________________________________
+
+
+
+
+Department.java:
+****************
+
+
+package com.example.employeemanagementsystem.model;
+
+import lombok.Data;
+import javax.persistence.*;
+import java.util.List;
+
+@Data
+@Entity
+public class Department {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(mappedBy = "department")
+    private List<Employee> employees;
+}
+
+
+__________________________________________________________________________________
+
+EmployeeRepository.java:
+************************
+
+
+package com.example.employeemanagementsystem.repository;
+
+import com.example.employeemanagementsystem.model.Employee;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+}
+
+
+
+__________________________________________________________________________________
+
+
+
+DepartmentRepository.java:
+**************************
+
+
+package com.example.employeemanagementsystem.repository;
+
+import com.example.employeemanagementsystem.model.Department;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface DepartmentRepository extends JpaRepository<Department, Long> {
+}
+
+
+
+
+__________________________________________________________________________________
+
+
+EmployeeController.java:
+************************
+
+package com.example.employeemanagementsystem.controller;
+
+import com.example.employeemanagementsystem.model.Employee;
+import com.example.employeemanagementsystem.repository.EmployeeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/employees")
+public class EmployeeController {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @GetMapping
+    public List<Employee> getAllEmployees() {
+        return employeeRepository.findAll();
+    }
+
+    @PostMapping
+    public Employee createEmployee(@RequestBody Employee employee) {
+        return employeeRepository.save(employee);
+    }
+
+    @GetMapping("/{id}")
+    public Employee getEmployeeById(@PathVariable Long id) {
+        return employeeRepository.findById(id).orElse(null);
+    }
+
+    @PutMapping("/{id}")
+    public Employee updateEmployee(@PathVariable Long id, @RequestBody Employee employee) {
+        employee.setId(id);
+        return employeeRepository.save(employee);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteEmployee(@PathVariable Long id) {
+        employeeRepository.deleteById(id);
+    }
+}
+
+
+
+
+

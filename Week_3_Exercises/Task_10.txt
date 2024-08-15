@@ -1,0 +1,135 @@
+
+
+Employee.java:
+**************
+
+package com.example.employeemanagementsystem.model;
+
+import lombok.Data;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
+import javax.persistence.*;
+
+@Data
+@Entity
+@Table(name = "employees")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@BatchSize(size = 50)
+public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+}
+
+
+____________________________________________________________________________________
+
+
+Department.java:
+****************
+
+package com.example.employeemanagementsystem.model;
+
+import lombok.Data;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
+import javax.persistence.*;
+import java.util.Set;
+
+@Data
+@Entity
+@Table(name = "departments")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+public class Department {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String name;
+
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<Employee> employees;
+}
+
+
+_______________________________________________________________________________________________________
+
+
+application.properties:
+***********************
+
+
+# Hibernate Dialect and Properties
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+spring.jpa.properties.hibernate.jdbc.batch_size=50
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+spring.jpa.properties.hibernate.jdbc.batch_versioned_data=true
+
+______________________________________________________________________________________________________________
+
+
+HibernateConfig.java:
+*********************
+
+package com.example.employeemanagementsystem.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+@Configuration
+public class HibernateConfig {
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+        em.setDataSource(dataSource);
+        em.setPackagesToScan("com.example.employeemanagementsystem.model");
+
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        em.setJpaVendorAdapter(vendorAdapter);
+        em.setJpaPropertyMap(Map.of(
+            "hibernate.jdbc.batch_size", 50,
+            "hibernate.order_inserts", true,
+            "hibernate.order_updates", true,
+            "hibernate.jdbc.batch_versioned_data", true
+        ));
+
+        return em;
+    }
+
+    @Bean
+    public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(entityManagerFactory);
+        return transactionManager;
+    }
+}
+
+
+____________________________________________________________________________________________________________
+
+
+
