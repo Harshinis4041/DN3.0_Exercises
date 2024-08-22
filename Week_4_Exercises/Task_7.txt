@@ -1,0 +1,247 @@
+
+>> BookDTO.java:
+   ************
+
+package com.example.bookstoreapi.dto;
+
+import lombok.Data;
+
+@Data
+public class BookDTO {
+    private Long id;
+    private String title;
+    private String author;
+    private double price;
+    private String isbn;
+}
+
+------------------------------------------------------------------------------------------
+
+>> CustomerDTO.java:
+   *****************
+
+package com.example.bookstoreapi.dto;
+
+import lombok.Data;
+
+@Data
+public class CustomerDTO {
+    private Long id;
+    private String name;
+    private String email;
+    private String address;
+}
+
+
+------------------------------------------------------------------------------------------------------
+
+
+>> pom.xml:
+   ********
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>bookstoreapi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>BookstoreAPI</name>
+    <description>A RESTful service for managing books, authors, and customers</description>
+    <properties>
+        <java.version>17</java.version>
+        <mapstruct.version>1.5.3.Final</mapstruct.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- MapStruct dependency -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <!-- MapStruct processor dependency -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- MapStruct plugin configuration -->
+            <plugin>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-maven-plugin</artifactId>
+                <version>${mapstruct.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+
+
+>> BookMapper.java:
+   ****************
+
+package com.example.bookstoreapi.mapper;
+
+import com.example.bookstoreapi.dto.BookDTO;
+import com.example.bookstoreapi.model.Book;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+@Mapper
+public interface BookMapper {
+    BookMapper INSTANCE = Mappers.getMapper(BookMapper.class);
+
+    BookDTO bookToBookDTO(Book book);
+    Book bookDTOToBook(BookDTO bookDTO);
+}
+
+
+-------------------------------------------------------------------------------------------------------
+
+
+>> CustomerMapper.java:
+  *********************
+
+package com.example.bookstoreapi.mapper;
+
+import com.example.bookstoreapi.dto.CustomerDTO;
+import com.example.bookstoreapi.model.Customer;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+@Mapper
+public interface CustomerMapper {
+    CustomerMapper INSTANCE = Mappers.getMapper(CustomerMapper.class);
+
+    CustomerDTO customerToCustomerDTO(Customer customer);
+    Customer customerDTOToCustomer(CustomerDTO customerDTO);
+}
+
+
+------------------------------------------------------------------------------------------------------
+
+>> Book.java:
+   **********
+
+package com.example.bookstoreapi.model;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Data
+@Entity
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @JsonProperty("book_title")
+    private String title;
+
+    @JsonProperty("book_author")
+    private String author;
+
+    private double price;
+
+    @JsonProperty("book_isbn")
+    private String isbn;
+}
+
+
+--------------------------------------------------------------------------------------------------
+
+
+>> Customer.java:
+   **************
+
+package com.example.bookstoreapi.model;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Data
+@Entity
+public class Customer {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @JsonProperty("customer_name")
+    private String name;
+
+    @JsonProperty("customer_email")
+    private String email;
+
+    @JsonProperty("customer_address")
+    private String address;
+}
+
+
+--------------------------------------------------------------------------------------------------------------
+
+
+
+
+
