@@ -1,0 +1,105 @@
+
+>> BookController.java:
+  *********************
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.repository.BookRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/books")
+public class BookController {
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    // Customizing the HTTP status for creating a new book
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)  // Setting HTTP status to 201 Created
+    public Book createBook(@RequestBody Book book) {
+        return bookRepository.save(book);
+    }
+
+    // Customizing the HTTP status and headers when fetching a book by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Optional<Book> book = bookRepository.findById(id);
+
+        if (book.isPresent()) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Custom-Header", "BookHeader");
+            return new ResponseEntity<>(book.get(), headers, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);  // Setting HTTP status to 404 Not Found
+        }
+    }
+
+    // Customizing the HTTP status and headers for deleting a book
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+        if (bookRepository.existsById(id)) {
+            bookRepository.deleteById(id);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Custom-Header", "DeleteOperation");
+            return new ResponseEntity<>(headers, HttpStatus.NO_CONTENT);  // Setting HTTP status to 204 No Content
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);  // Setting HTTP status to 404 Not Found
+        }
+    }
+}
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+>> Book.java:
+   **********
+
+package com.example.bookstoreapi.model;
+
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Data
+@Entity
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String author;
+    private double price;
+    private String isbn;
+}
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+>> BookRepository.java:
+   ********************
+
+package com.example.bookstoreapi.repository;
+
+import com.example.bookstoreapi.model.Book;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface BookRepository extends JpaRepository<Book, Long> {
+    // Additional query methods can be defined here if needed
+}
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
