@@ -1,0 +1,207 @@
+
+>> BookController.java:
+   ********************
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.repository.BookRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/books")
+public class BookController {
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    @GetMapping
+    public List<Book> getAllBooks() {
+        return bookRepository.findAll();
+    }
+
+    @PostMapping
+    public Book addBook(@RequestBody Book book) {
+        return bookRepository.save(book);
+    }
+
+    @PutMapping("/{id}")
+    public Book updateBook(@PathVariable Long id, @RequestBody Book book) {
+        Optional<Book> existingBook = bookRepository.findById(id);
+        if (existingBook.isPresent()) {
+            Book updatedBook = existingBook.get();
+            updatedBook.setTitle(book.getTitle());
+            updatedBook.setAuthor(book.getAuthor());
+            updatedBook.setPrice(book.getPrice());
+            updatedBook.setIsbn(book.getIsbn());
+            return bookRepository.save(updatedBook);
+        } else {
+            throw new RuntimeException("Book not found");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteBook(@PathVariable Long id) {
+        if (bookRepository.existsById(id)) {
+            bookRepository.deleteById(id);
+            return "Book with ID " + id + " has been deleted.";
+        } else {
+            throw new RuntimeException("Book not found");
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
+>> Book.java:
+   **********
+
+package com.example.bookstoreapi.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String author;
+    private double price;
+    private String isbn;
+}
+
+------------------------------------------------------------------------------------------------------------------------
+
+>> BookRepository.java:
+   ********************
+
+package com.example.bookstoreapi.repository;
+
+import com.example.bookstoreapi.model.Book;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface BookRepository extends JpaRepository<Book, Long> {
+}
+
+
+--------------------------------------------------------------------------------------------------------------
+
+>> pom.xml:
+   ********
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>bookstoreapi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>BookstoreAPI</name>
+    <description>A RESTful service for managing books, authors, and customers</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- H2 Database Dependency -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+----------------------------------------------------------------------------------------------------------------
+
+>> application.properties:
+   **********************
+
+
+# Application Name
+spring.application.name=BookstoreAPI
+
+# H2 Database Configuration
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.h2.console.enabled=true
+spring.jpa.hibernate.ddl-auto=update

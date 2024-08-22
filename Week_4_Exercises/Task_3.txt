@@ -1,0 +1,139 @@
+
+>> BookController.java:
+   *******************
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.repository.BookRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/books")
+public class BookController {
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    @GetMapping
+    public List<Book> getAllBooks(
+        @RequestParam(required = false) String title,
+        @RequestParam(required = false) String author) {
+        if (title != null && author != null) {
+            return bookRepository.findByTitleAndAuthor(title, author);
+        } else if (title != null) {
+            return bookRepository.findByTitle(title);
+        } else if (author != null) {
+            return bookRepository.findByAuthor(author);
+        } else {
+            return bookRepository.findAll();
+        }
+    }
+
+    @GetMapping("/{id}")
+    public Book getBookById(@PathVariable Long id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+    }
+
+    @PostMapping
+    public Book addBook(@RequestBody Book book) {
+        return bookRepository.save(book);
+    }
+
+    @PutMapping("/{id}")
+    public Book updateBook(@PathVariable Long id, @RequestBody Book book) {
+        Optional<Book> existingBook = bookRepository.findById(id);
+        if (existingBook.isPresent()) {
+            Book updatedBook = existingBook.get();
+            updatedBook.setTitle(book.getTitle());
+            updatedBook.setAuthor(book.getAuthor());
+            updatedBook.setPrice(book.getPrice());
+            updatedBook.setIsbn(book.getIsbn());
+            return bookRepository.save(updatedBook);
+        } else {
+            throw new RuntimeException("Book not found");
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteBook(@PathVariable Long id) {
+        if (bookRepository.existsById(id)) {
+            bookRepository.deleteById(id);
+            return "Book with ID " + id + " has been deleted.";
+        } else {
+            throw new RuntimeException("Book not found");
+        }
+    }
+}
+
+
+----------------------------------------------------------------------------------------------------
+
+>> BookRepository.java:
+   ********************
+
+package com.example.bookstoreapi.repository;
+
+import com.example.bookstoreapi.model.Book;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface BookRepository extends JpaRepository<Book, Long> {
+    List<Book> findByTitle(String title);
+    List<Book> findByAuthor(String author);
+    List<Book> findByTitleAndAuthor(String title, String author);
+}
+
+
+
+----------------------------------------------------------------------------------------------------------
+
+>> Book.java:
+   **********
+
+package com.example.bookstoreapi.model;
+
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Data
+@Entity
+public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String author;
+    private Double price;
+    private String isbn;
+}
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+>> application.properties:
+   ************************
+
+# Application Name
+spring.application.name=BookstoreAPI
+
+# H2 Database Configuration
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.h2.console.enabled=true
+spring.jpa.hibernate.ddl-auto=update
