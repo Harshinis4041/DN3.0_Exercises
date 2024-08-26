@@ -1,0 +1,300 @@
+
+** BookModelAssembler.java: **
+-----------------------------
+
+package com.example.bookstoreapi.assembler;
+
+import com.example.bookstoreapi.controller.BookController;
+import com.example.bookstoreapi.model.Book;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookModelAssembler {
+
+    public EntityModel<Book> toModel(Book book) {
+        EntityModel<Book> bookModel = EntityModel.of(book);
+
+        Link selfLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BookController.class).getBookById(book.getId())).withSelfRel();
+        Link allBooksLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BookController.class).getAllBooks()).withRel("all-books");
+
+        bookModel.add(selfLink, allBooksLink);
+
+        return bookModel;
+    }
+}
+
+
+____________________________________________________________________________________________________________________________________________________
+
+
+** CustomerModelAssembler.java: **
+----------------------------------
+
+package com.example.bookstoreapi.assembler;
+
+import com.example.bookstoreapi.controller.CustomerController;
+import com.example.bookstoreapi.model.Customer;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomerModelAssembler {
+
+    public EntityModel<Customer> toModel(Customer customer) {
+        EntityModel<Customer> customerModel = EntityModel.of(customer);
+
+        Link selfLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CustomerController.class).getCustomerById(customer.getId())).withSelfRel();
+        Link allCustomersLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CustomerController.class).getAllCustomers()).withRel("all-customers");
+
+        customerModel.add(selfLink, allCustomersLink);
+
+        return customerModel;
+    }
+}
+
+
+____________________________________________________________________________________________________________________________________________________________________________
+
+
+** BookController.java: **
+--------------------------
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.assembler.BookModelAssembler;
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.service.BookService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.collection.CollectionModel;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private BookModelAssembler bookModelAssembler;
+
+    @PostMapping
+    public EntityModel<Book> createBook(@Valid @RequestBody Book book) {
+        Book createdBook = bookService.saveBook(book);
+        return bookModelAssembler.toModel(createdBook);
+    }
+
+    @GetMapping
+    public CollectionModel<EntityModel<Book>> getAllBooks() {
+        List<EntityModel<Book>> books = bookService.getAllBooks().stream()
+                .map(bookModelAssembler::toModel)
+                .collect(Collectors.toList());
+        return CollectionModel.of(books, WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BookController.class).getAllBooks()).withSelfRel());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EntityModel<Book>> getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> ResponseEntity.ok(bookModelAssembler.toModel(book)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EntityModel<Book>> updateBook(@PathVariable Long id, @Valid @RequestBody Book bookDetails) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    book.setTitle(bookDetails.getTitle());
+                    book.setAuthor(bookDetails.getAuthor());
+                    book.setPrice(bookDetails.getPrice());
+                    Book updatedBook = bookService.updateBook(book);
+                    return ResponseEntity.ok(bookModelAssembler.toModel(updatedBook));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    bookService.deleteBook(id);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+
+
+____________________________________________________________________________________________________________________________________
+
+
+** CustomerController.java: **
+-------------------------------
+
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.assembler.CustomerModelAssembler;
+import com.example.bookstoreapi.model.Customer;
+import com.example.bookstoreapi.service.CustomerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.collection.CollectionModel;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/customers")
+public class CustomerController {
+
+    @Autowired
+    private CustomerService customerService;
+
+    @Autowired
+    private CustomerModelAssembler customerModelAssembler;
+
+    @PostMapping
+    public EntityModel<Customer> createCustomer(@Valid @RequestBody Customer customer) {
+        Customer createdCustomer = customerService.saveCustomer(customer);
+        return customerModelAssembler.toModel(createdCustomer);
+    }
+
+    @GetMapping
+    public CollectionModel<EntityModel<Customer>> getAllCustomers() {
+        List<EntityModel<Customer>> customers = customerService.getAllCustomers().stream()
+                .map(customerModelAssembler::toModel)
+                .collect(Collectors.toList());
+        return CollectionModel.of(customers, WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CustomerController.class).getAllCustomers()).withSelfRel());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EntityModel<Customer>> getCustomerById(@PathVariable Long id) {
+        return customerService.getCustomerById(id)
+                .map(customer -> ResponseEntity.ok(customerModelAssembler.toModel(customer)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EntityModel<Customer>> updateCustomer(@PathVariable Long id, @Valid @RequestBody Customer customerDetails) {
+        return customerService.getCustomerById(id)
+                .map(customer -> {
+                    customer.setName(customerDetails.getName());
+                    customer.setEmail(customerDetails.getEmail());
+                    Customer updatedCustomer = customerService.updateCustomer(customer);
+                    return ResponseEntity.ok(customerModelAssembler.toModel(updatedCustomer));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+        return customerService.getCustomerById(id)
+                .map(customer -> {
+                    customerService.deleteCustomer(id);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+
+
+_________________________________________________________________________________________________________________________________________________________________________________________
+
+
+** pom.xml: ** 
+--------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>bookstoreapi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>BookstoreAPI</name>
+    <description>A RESTful service for managing books, authors, and customers</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <!-- Spring Boot Starter Web for building web applications -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot DevTools for automatic restarts and live reload -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Lombok for reducing boilerplate code -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Spring Boot Starter Test for unit testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring HATEOAS for HATEOAS support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
+
+        <!-- MySQL Connector/J for MySQL database connectivity -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+____________________________________________________________________________________________________________________________
