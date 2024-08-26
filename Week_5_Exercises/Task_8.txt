@@ -1,0 +1,346 @@
+
+** Book.java: **
+-----------------
+
+package com.example.bookstoreapi.model;
+
+import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+@Entity
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotNull
+    @Size(min = 2, max = 100)
+    private String title;
+
+    @NotNull
+    @Size(min = 2, max = 50)
+    private String author;
+
+    @Min(0)
+    private Double price;
+
+    @Version
+    private int version;
+
+    // Getters and Setters
+}
+
+
+
+_________________________________________________________________________________________________
+
+
+** Customer.java: **
+--------------------
+
+package com.example.bookstoreapi.model;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+@Entity
+public class Customer {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotNull
+    @Size(min = 2, max = 50)
+    private String name;
+
+    @NotNull
+    @Size(min = 2, max = 100)
+    private String email;
+
+    @Version
+    private int version;
+
+    // Getters and Setters
+}
+
+
+_______________________________________________________________________________________________________
+
+
+** BookRepository.java: **
+--------------------------
+
+
+package com.example.bookstoreapi.repository;
+
+import com.example.bookstoreapi.model.Book;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface BookRepository extends JpaRepository<Book, Long> {
+}
+
+
+________________________________________________________________________________________________________
+
+
+** CustomerRepository.java: **
+------------------------------
+
+package com.example.bookstoreapi.repository;
+
+import com.example.bookstoreapi.model.Customer;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
+}
+
+
+_________________________________________________________________________________________________________
+
+
+** BookService.java: **
+-----------------------
+
+package com.example.bookstoreapi.service;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.repository.BookRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class BookService {
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    public Book saveBook(Book book) {
+        return bookRepository.save(book);
+    }
+
+    public List<Book> getAllBooks() {
+        return bookRepository.findAll();
+    }
+
+    public Optional<Book> getBookById(Long id) {
+        return bookRepository.findById(id);
+    }
+
+    public Book updateBook(Book book) {
+        return bookRepository.save(book);
+    }
+
+    public void deleteBook(Long id) {
+        bookRepository.deleteById(id);
+    }
+}
+
+
+___________________________________________________________________________________________________________________
+
+
+** CustomerService.java: **
+---------------------------
+
+package com.example.bookstoreapi.service;
+
+import com.example.bookstoreapi.model.Customer;
+import com.example.bookstoreapi.repository.CustomerRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class CustomerService {
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    public Customer saveCustomer(Customer customer) {
+        return customerRepository.save(customer);
+    }
+
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findAll();
+    }
+
+    public Optional<Customer> getCustomerById(Long id) {
+        return customerRepository.findById(id);
+    }
+
+    public Customer updateCustomer(Customer customer) {
+        return customerRepository.save(customer);
+    }
+
+    public void deleteCustomer(Long id) {
+        customerRepository.deleteById(id);
+    }
+}
+
+
+_________________________________________________________________________________________________________________
+
+
+** BookController.java: **
+---------------------------
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.service.BookService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    @Autowired
+    private BookService bookService;
+
+    @PostMapping
+    public Book createBook(@Valid @RequestBody Book book) {
+        return bookService.saveBook(book);
+    }
+
+    @GetMapping
+    public List<Book> getAllBooks() {
+        return bookService.getAllBooks();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Book> updateBook(@PathVariable Long id, @Valid @RequestBody Book bookDetails) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    book.setTitle(bookDetails.getTitle());
+                    book.setAuthor(bookDetails.getAuthor());
+                    book.setPrice(bookDetails.getPrice());
+                    return ResponseEntity.ok(bookService.updateBook(book));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    bookService.deleteBook(id);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+
+
+
+_____________________________________________________________________________________________________________________
+
+
+** CustomerController.java: **
+-------------------------------
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Customer;
+import com.example.bookstoreapi.service.CustomerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/customers")
+public class CustomerController {
+
+    @Autowired
+    private CustomerService customerService;
+
+    @PostMapping
+    public Customer createCustomer(@Valid @RequestBody Customer customer) {
+        return customerService.saveCustomer(customer);
+    }
+
+    @GetMapping
+    public List<Customer> getAllCustomers() {
+        return customerService.getAllCustomers();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
+        return customerService.getCustomerById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @Valid @RequestBody Customer customerDetails) {
+        return customerService.getCustomerById(id)
+                .map(customer -> {
+                    customer.setName(customerDetails.getName());
+                    customer.setEmail(customerDetails.getEmail());
+                    return ResponseEntity.ok(customerService.updateCustomer(customer));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+        return customerService.getCustomerById(id)
+                .map(customer -> {
+                    customerService.deleteCustomer(id);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+
+
+__________________________________________________________________________________________________________________________________________________
+
+
+** application.properties: **
+------------------------------
+
+# Application Name
+spring.application.name=BookstoreAPI
+
+# Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/bookstore
+spring.datasource.username=root
+spring.datasource.password=yourpassword
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# Other Configurations (optional)
+#spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+#spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+
+
+
+
+
