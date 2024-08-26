@@ -1,0 +1,222 @@
+
+** CustomMetrics.java: **
+-------------------------
+
+package com.example.bookstoreapi.metrics;
+
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomMetrics {
+
+    private final MeterRegistry meterRegistry;
+
+    @Autowired
+    public CustomMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    @Counted(value = "custom.metric.counter", description = "Counts the number of custom metrics recorded")
+    public void recordCustomMetric() {
+        meterRegistry.counter("custom.metric.counter").increment();
+    }
+}
+
+
+_____________________________________________________________________________________________________________________________
+
+
+** BookController.java: **
+---------------------------
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.metrics.CustomMetrics;
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.service.BookService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.collection.CollectionModel;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private CustomMetrics customMetrics;
+
+    @PostMapping
+    public ResponseEntity<EntityModel<Book>> createBook(@Valid @RequestBody Book book) {
+        Book createdBook = bookService.saveBook(book);
+        customMetrics.recordCustomMetric(); // Record custom metric
+        return ResponseEntity.ok(bookModelAssembler.toModel(createdBook));
+    }
+
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    public ResponseEntity<CollectionModel<EntityModel<Book>>> getAllBooks() {
+        List<EntityModel<Book>> books = bookService.getAllBooks().stream()
+                .map(bookModelAssembler::toModel)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(CollectionModel.of(books));
+    }
+
+    @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    public ResponseEntity<EntityModel<Book>> getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> ResponseEntity.ok(bookModelAssembler.toModel(book)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping(value = "/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    public ResponseEntity<EntityModel<Book>> updateBook(@PathVariable Long id, @Valid @RequestBody Book bookDetails) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    book.setTitle(bookDetails.getTitle());
+                    book.setAuthor(bookDetails.getAuthor());
+                    book.setPrice(bookDetails.getPrice());
+                    Book updatedBook = bookService.updateBook(book);
+                    return ResponseEntity.ok(bookModelAssembler.toModel(updatedBook));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(book -> {
+                    bookService.deleteBook(id);
+                    return ResponseEntity.ok().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+___________________________________________________________________________________________________________________________________________
+
+
+** pom.xml: **
+--------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>bookstoreapi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>BookstoreAPI</name>
+    <description>A RESTful service for managing books, authors, and customers</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <!-- Spring Boot Starter Web for building web applications -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot DevTools for automatic restarts and live reload -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Lombok for reducing boilerplate code -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Spring Boot Starter Test for unit testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot Actuator for monitoring and management endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Spring HATEOAS for HATEOAS support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
+
+        <!-- Jackson XML for XML support -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+
+        <!-- MySQL Connector/J for MySQL database connectivity -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+
+___________________________________________________________________________________________________________________________________________________________
+
+
+** application.properties: **
+-----------------------------
+
+# Application Name
+spring.application.name=BookstoreAPI
+
+# Enable all actuator endpoints
+management.endpoints.web.exposure.include=*
+
+# Customize specific endpoints if needed
+management.endpoint.health.show-details=always
+management.endpoints.web.base-path=/actuator
+
+
+
+_______________________________________________________________________________________________________________________________________________________________
