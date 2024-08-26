@@ -1,0 +1,263 @@
+
+
+** BookControllerTest.java: **
+------------------------------
+
+package com.example.bookstoreapi.controller;
+
+import com.example.bookstoreapi.model.Book;
+import com.example.bookstoreapi.service.BookService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(BookController.class)
+@EnableWebMvc
+public class BookControllerTest {
+
+    private MockMvc mockMvc;
+
+    @Mock
+    private BookService bookService;
+
+    @InjectMocks
+    private BookController bookController;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(bookController).build();
+    }
+
+    @Test
+    public void testGetBookById() throws Exception {
+        Book book = new Book(1L, "Title", "Author", "Description", 10.99);
+        given(bookService.getBookById(1L)).willReturn(book);
+
+        mockMvc.perform(get("/api/books/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.title").value("Title"));
+    }
+
+    @Test
+    public void testCreateBook() throws Exception {
+        Book book = new Book(1L, "Title", "Author", "Description", 10.99);
+        given(bookService.createBook(book)).willReturn(book);
+
+        mockMvc.perform(post("/api/books")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(book)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Title"));
+    }
+
+    private static String asJsonString(Object obj) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+
+
+
+________________________________________________________________________________________________________________________________________________
+
+
+** UserDetailsServiceImplTest.java: **
+--------------------------------------
+
+package com.example.bookstoreapi.service;
+
+import com.example.bookstoreapi.model.User;
+import com.example.bookstoreapi.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
+
+public class UserDetailsServiceImplTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserDetailsServiceImpl userDetailsService;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testLoadUserByUsername() {
+        User user = new User("username", "password", "ROLE_USER");
+        given(userRepository.findByUsername("username")).willReturn(user);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername("username");
+
+        assertNotNull(userDetails);
+        assertEquals("username", userDetails.getUsername());
+    }
+
+    @Test
+    public void testLoadUserByUsernameNotFound() {
+        given(userRepository.findByUsername("invalid")).willReturn(null);
+
+        assertThrows(UsernameNotFoundException.class, () -> {
+            userDetailsService.loadUserByUsername("invalid");
+        });
+    }
+}
+
+
+______________________________________________________________________________________________________________________________________________________________
+
+
+** BookstoreApiApplicationTests.java: **
+----------------------------------------
+
+
+package com.example.bookstoreapi;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class BookstoreApiApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
+
+
+________________________________________________________________________________________________________________________________________________________________________
+
+
+** pom.xml: **
+--------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.3.2</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example</groupId>
+	<artifactId>bookstoreapi</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>BookstoreAPI</name>
+	<description>A RESTful service for managing books, authors, and customers</description>
+	<url/>
+	<licenses>
+		<license/>
+	</licenses>
+	<developers>
+		<developer/>
+	</developers>
+	<scm>
+		<connection/>
+		<developerConnection/>
+		<tag/>
+		<url/>
+	</scm>
+	<properties>
+		<java.version>17</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Mockito for mocking dependencies -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>5.4.0</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- JUnit 5 -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.8.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.8.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+
+
+______________________________________________________________________________________________________________________________________________
+
+
+
+
+
+
