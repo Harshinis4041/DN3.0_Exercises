@@ -1,0 +1,312 @@
+
+
+** pom.xml: **
+--------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>bookstoreapi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>BookstoreAPI</name>
+    <description>A RESTful service for managing books, authors, and customers</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Security for securing your application -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JSON Web Token (JWT) library -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+
+__________________________________________________________________________________________________________________________________
+
+
+** SecurityConfig.java: **
+--------------------------
+
+
+package com.example.bookstoreapi.config;
+
+import com.example.bookstoreapi.filter.JwtAuthenticationFilter;
+import com.example.bookstoreapi.service.UserDetailsServiceImpl;
+import com.example.bookstoreapi.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.cors().and().csrf().disable()
+            .authorizeRequests()
+            .antMatchers("/api/auth/**").permitAll()
+            .anyRequest().authenticated()
+            .and()
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    public void configure(WebSecurity web) {
+        web.ignoring().antMatchers("/v2/api-docs", "/swagger-ui.html", "/webjars/**", "/swagger-resources/**");
+    }
+}
+
+
+___________________________________________________________________________________________________________________________________________________________
+
+
+** JwtUtil.java: **
+--------------------
+
+package com.example.bookstoreapi.util;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+
+@Component
+public class JwtUtil {
+
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    @Value("${jwt.expiration}")
+    private long expiration;
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(SignatureAlgorithm.HS512, secretKey)
+                .compact();
+    }
+
+    public Claims extractClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(secretKey)
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    public String extractUsername(String token) {
+        return extractClaims(token).getSubject();
+    }
+
+    public boolean isTokenExpired(String token) {
+        return extractClaims(token).getExpiration().before(new Date());
+    }
+
+    public boolean validateToken(String token, String username) {
+        return (username.equals(extractUsername(token)) && !isTokenExpired(token));
+    }
+}
+
+
+
+________________________________________________________________________________________________________________________
+
+
+** JwtAuthenticationFilter.java: **
+-----------------------------------
+
+
+package com.example.bookstoreapi.filter;
+
+import com.example.bookstoreapi.service.UserDetailsServiceImpl;
+import com.example.bookstoreapi.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.User;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+
+public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            if (username != null && !jwtUtil.isTokenExpired(token)) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (jwtUtil.validateToken(token, username)) {
+                    return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+        SecurityContextHolder.getContext().setAuthentication(authResult);
+        chain.doFilter(request, response);
+    }
+}
+
+
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+** CorsConfig.java: **
+-----------------------
+
+
+package com.example.bookstoreapi.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("*")
+                .allowedMethods("*")
+                .allowedHeaders("*");
+    }
+}
+
+
+
+__________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+** UserDetailsServiceImpl.java: **
+----------------------------------
+
+package com.example.bookstoreapi.service;
+
+import com.example.bookstoreapi.model.User;
+import com.example.bookstoreapi.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service
+
+
+___________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+
